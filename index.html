@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<head>
+    <title>WebHID Demo</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .grass,
+        .sky,
+        .road {
+            position: relative;
+        }
+
+        .sky {
+            height: 35vh;
+            background: skyblue;
+        }
+
+        .grass {
+            height: 25vh;
+            background: seagreen;
+        }
+
+        .road {
+            height: 40vh;
+            background: dimgrey;
+            box-sizing: border-box;
+            border-top: 10px solid grey;
+            border-bottom: 10px solid grey;
+            width: 100%;
+        }
+
+        .lines {
+            box-sizing: border-box;
+            border: 5px dashed #ffffff;
+            height: 0px;
+            width: 100%;
+            position: absolute;
+            top: 45%;
+        }
+
+        #mario {
+            position: absolute;
+            top: -40px;
+            left: 0px;
+        }
+
+        .bomb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: red;
+            opacity: 1;
+            position: absolute;
+            transition: all 5s linear;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game">
+        <div class="sky"></div>
+        <div class="grass"></div>
+        <div class="road">
+            <div class="lines"></div>
+            <img src="https://github.com/iamshaunjp/css-animations-playlist/blob/master/mario-examples/img/mario.png?raw=true"
+                id="mario" />
+        </div>
+    </div>
+    <audio src="./public/Swoosh.mp3" id="swoosh"></audio>
+    <script>
+        const mario = document.getElementById('mario')
+        const cssStyle = window.getComputedStyle(mario)
+        const swoosh = document.getElementById('swoosh')
+        let maxWidth;
+        let interval;
+        window.addEventListener('gamepadconnected', e => {
+            console.log(e)
+            if (!("ongamepadconnected" in window)) {
+                interval = setInterval(pollGamepad, 300)
+            }
+        })
+        function pollGamepad() {
+            const gamepads = navigator.getGamepads();
+            gameLoop(gamepads[0]);
+        }
+        function gameLoop(gamepad) {
+            if (!gamepad) {
+                clearInterval(interval)
+                return;
+            }
+            axesControl(gamepad.axes)
+            buttonControl(gamepad.buttons)
+        }
+        function axesControl(axes) {
+            const leftStickX = axes[0]
+            const leftStickY = axes[1]
+            const rightStickX = axes[2]
+            const rightStickY = axes[3]
+            updatePosition(leftStickX, rightStickY)
+        }
+        function buttonControl(button) {
+            const circle = button[1].pressed;
+            shoot(circle)
+        }
+        function updatePosition(leftStickX, rightStickY) {
+            let previousX = cssStyle.getPropertyValue('left')
+            let previousY = cssStyle.getPropertyValue('top')
+            maxWidth = window.innerWidth;
+            if (leftStickX == 1) {
+                if (previousX.replace(/px/g, '') <= (maxWidth)) {
+                    mario.style.left = `calc(${previousX} + 2px)`
+                }
+                if (previousX.replace(/px/g, '') > (maxWidth)) {
+                    mario.style.left = `calc(2px)`
+                }
+            }
+            if (leftStickX === -1) {
+                if (previousX.replace(/px/g, '') >= 0) {
+                    mario.style.left = `calc(${previousX} - 2px)`
+                }
+            }
+            if (rightStickY === 1) {
+                if (previousY.replace(/px/g, '') <= 250) {
+                    mario.style.top = `calc(${previousY} + 2px)`
+                }
+            }
+            if (rightStickY === -1) {
+                if (previousY.replace(/px/g, '') >= -124) {
+                    mario.style.top = `calc(${previousY} - 2px)`
+                }
+            }
+        }
+        function shoot(circle) {
+            let marioPositionX = cssStyle.getPropertyValue('left')
+            let marioPositionY = cssStyle.getPropertyValue('top')
+            const road = document.getElementsByClassName('road')[0]
+            maxWidth = window.innerWidth;
+            if (circle) {
+                console.log(circle)
+                const shot = document.createElement('div');
+                shot.setAttribute('class', 'bomb');
+                shot.style.left = `calc(${marioPositionX} + 85px)`
+                shot.style.top = `calc(${marioPositionY} + 50px)`
+                road.appendChild(shot)
+                shot.style.opacity = 1
+                swoosh.play();
+                requestAnimationFrame(() => {
+                    shot.style.transform = `translateX(${maxWidth}px)`
+                })
+            }
+        }
+
+    </script>
+</body>
+
+</html>
